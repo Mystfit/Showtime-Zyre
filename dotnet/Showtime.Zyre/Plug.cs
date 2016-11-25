@@ -6,7 +6,7 @@ using NetMQ.Sockets;
 
 namespace Showtime.Zyre
 {
-    public class Plug
+    public class Plug<T> where T : NetMQSocket
     {
         public Plug(string name, Node owner)
         {
@@ -34,8 +34,8 @@ namespace Showtime.Zyre
         public void SetClean() { _dirty = false; }
         public bool IsDirty { get { return _dirty; } }
 
-        protected NetMQSocket _socket;
-        public NetMQSocket Socket { get { return _socket; } }
+        protected T _socket;
+        public T Socket { get { return _socket; } }
 
         public string FullName { get { return String.Format("{0}/{1}/{2}", _owner.GetEndpoint?.Name, _owner.Name, _name); } }
 

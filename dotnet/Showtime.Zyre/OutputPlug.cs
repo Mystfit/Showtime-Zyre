@@ -6,7 +6,7 @@ using NetMQ.Sockets;
 
 namespace Showtime.Zyre
 {
-    public class OutputPlug : Plug
+    public class OutputPlug : Plug<PublisherSocket>
     {
         public OutputPlug(string name, Node owner) : base(name, owner)
         {
