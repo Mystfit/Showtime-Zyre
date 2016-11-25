@@ -35,10 +35,26 @@ namespace Showtime.Zyre
             _poller = new NetMQPoller();
             _poller.Add(zyre.Socket);
             _pollthread = new Thread(() => {
+                Bootstrap();
                 _poller.Run();
             });
             _pollthread.Name = "endpoint-poller";
             _pollthread.Start();
+
+        }
+
+        public void Bootstrap()
+        {
+            //BUG
+            //We create a temporary Zyre node to kickstart the poller which seems to block until a Zyre node is discovered
+            NetMQ.Zyre.Zyre bootstrap = new NetMQ.Zyre.Zyre("bootstrap", false);
+            bootstrap.Join("ZST");
+
+            NetMQMessage m = new NetMQMessage(1);
+            m.Append("WAKEUP");
+            bootstrap.Shout("ZST", m);
+            Thread.Sleep(100);
+            bootstrap.Dispose();
         }
 
         public void Close()
