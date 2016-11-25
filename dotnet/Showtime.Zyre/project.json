@@ -1,0 +1,14 @@
+{
+  "version": "1.0.0-*",
+
+  "dependencies": {
+    "MsgPack.Cli": "0.9.0-beta1",
+    "NetMQ": "4.0.0.0",
+    "NetMQ.Zyre": "1.0.0"
+  },
+
+  "frameworks": {
+    "net35": {
+    }
+  }
+}
