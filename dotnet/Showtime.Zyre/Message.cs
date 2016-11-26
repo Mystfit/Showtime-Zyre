@@ -7,28 +7,19 @@ namespace Showtime.Zyre
 {
     public class Message
     {
-        public string endpoint;
-        public string node;
-        public string originPlug;
-        public string fullPath;
+        public Address address;
         public string value;
 
         public Message(string path="", string val="")
         {
-            fullPath = path;
-            string[] address = fullPath.Split('/');
-
-            endpoint = address[0];
-            node = address[1];
-            originPlug = address[2];
-
+            address = Address.FromFullPath(path);
             value = val;
         }
 
         public NetMQMessage ToNetMQMessage()
         {
             NetMQMessage msg = new NetMQMessage();
-            msg.Append(String.Format("{0}/{1}/{2}",endpoint, node, originPlug));
+            msg.Append(address.ToString());
             msg.Append(value);
             return msg;
         }
@@ -40,12 +31,9 @@ namespace Showtime.Zyre
             return m;
         }
 
-
         public override string ToString()
         {
-            return String.Format("Endpoint:{0}, Node:{1}, OriginPlug:{2}, Value:{3}", endpoint, node, originPlug, value);
+            return String.Format("Address:{0}, Value:{1}", address.ToString(), value);
         }
-
-
     }
 }

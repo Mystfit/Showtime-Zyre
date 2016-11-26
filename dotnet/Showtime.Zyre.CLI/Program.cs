@@ -4,6 +4,8 @@ using System.Linq;
 using AsyncIO;
 using Showtime;
 using Showtime.Zyre;
+using Showtime.Zyre.Plugs;
+using Showtime.Zyre.Endpoints;
 
 namespace ConsoleApp1
 {
@@ -13,38 +15,41 @@ namespace ConsoleApp1
         {
             AsyncIO.ForceDotNet.Force();
 
-
-            Endpoint endpoint = new Endpoint("csharp_endpoint", (s) => { Console.WriteLine("REMOTE: " + s + "\n"); });
-
-            
-            Node node1 = endpoint.CreateNode("node1");
-            Node node2 = endpoint.CreateNode("node2");
-
-            //Pair1
-            OutputPlug output1 = node1.CreateOutputPlug("out1");
-            InputPlug input1 = node1.CreateInputPlug("in1");
-
-            //Pair2
-            OutputPlug output2 = node2.CreateOutputPlug("out2");
-            InputPlug input2 = node2.CreateInputPlug("in2");
-
-            Console.WriteLine("Connecting to " + output1.Address);
-            node2.Connect(output1, input2);
-            node1.Connect(output2, input1);
-
-            System.Threading.Thread.Sleep(1000);
-            
-            while (true)
+            using (LocalEndpoint local = new LocalEndpoint("local_endpoint", (s) => { Console.WriteLine("LOCAL: " + s); }))
+            using (LocalEndpoint remote = new LocalEndpoint("remote_endpoint", (s) => { Console.WriteLine("REMOTE: " + s); }))
             {
-                output1.Update("hello");
-                output2.Update("hi");
-                if (Console.KeyAvailable && Console.ReadKey(true).Key == ConsoleKey.Escape) break;
-                System.Threading.Thread.Sleep(1000);
-            }
-            Console.WriteLine("Closing...");
-            endpoint.Close();
+                Node[] nodes = new Node[4];
+                for (int i = 0; i < 4; i++)
+                {
+                    Endpoint endpoint = (i > 2) ? local : remote;
+                    Node node = endpoint.CreateNode("node" + i);
+                    nodes[i] = node;
 
-            Console.WriteLine("Done");
+                    OutputPlug output = node.CreateOutputPlug("out" + i);
+                    InputPlug input = node.CreateInputPlug("in" + i);
+
+                    if (i > 0)
+                    {
+                        Console.WriteLine("Connecting to " + output.Address);
+                        node.ConnectPlugs(nodes[i-1].Outputs[0], input);
+                    }
+                }
+
+
+                System.Threading.Thread.Sleep(1000);
+
+                while (true)
+                {
+                    for (int i = 0; i < 3; i++)
+                        nodes[i].Outputs[0].Update("hello");
+
+                    if (Console.KeyAvailable && Console.ReadKey(true).Key == ConsoleKey.Escape) break;
+
+                    System.Threading.Thread.Sleep(1000);
+                }
+            }
         }
+
+
     }
 }

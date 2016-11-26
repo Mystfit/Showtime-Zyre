@@ -3,9 +3,13 @@ using System.Collections.Generic;
 using System.Linq;
 using NetMQ;
 using NetMQ.Sockets;
+using Newtonsoft.Json;
+using Showtime.Zyre.Endpoints;
+using Showtime.Zyre.Plugs;
 
 namespace Showtime.Zyre
 {
+    [JsonObject(MemberSerialization.OptIn)]
     public class Node
     {
         private Endpoint _endpoint;
@@ -14,7 +18,9 @@ namespace Showtime.Zyre
         private List<OutputPlug> _outputs;
         private List<InputPlug> _inputs;        
         
-        public List<OutputPlug> Outputs { get { return _outputs; } } 
+        [JsonProperty]
+        public List<OutputPlug> Outputs { get { return _outputs; } }
+        [JsonProperty]
         public List<InputPlug> Inputs { get { return _inputs; } }
 
         private Dictionary<string, List<InputPlug>> _connectedInputs;
@@ -23,6 +29,7 @@ namespace Showtime.Zyre
         public SubscriberSocket InputSocket { get { return _input; } }
 
         private string _name;
+        [JsonProperty]
         public string Name { get { return _name; } }
 
         public Node(string name, Endpoint endpoint = null)
@@ -33,7 +40,6 @@ namespace Showtime.Zyre
             _input = new SubscriberSocket();
             _input.ReceiveReady += IncomingMessage;
             _endpoint = endpoint;
-
             _connectedInputs = new Dictionary<string, List<InputPlug>>();
         }
 
@@ -60,11 +66,11 @@ namespace Showtime.Zyre
             return output;
         }
 
-        public void Connect(OutputPlug output, InputPlug input)
+        public void ConnectPlugs(OutputPlug output, InputPlug input)
         {
             input.AddTarget(output.FullName);
-            _input.Connect(output.Address);
-            _input.Subscribe(output.FullName);
+            input.Socket.Connect(output.Address);
+            input.Socket.Subscribe(output.FullName);
             Console.WriteLine("Subscribing to " + output.FullName);
 
             if (!_connectedInputs.ContainsKey(output.FullName))
@@ -76,12 +82,15 @@ namespace Showtime.Zyre
         private void IncomingMessage(object sender, NetMQ.NetMQSocketEventArgs e)
         {
             NetMQMessage msg = e.Socket.ReceiveMultipartMessage();
-            string origin = msg[0].ConvertToString();
+            Address address = Address.FromFullPath(msg[0].ConvertToString());
 
-            foreach (InputPlug plug in _connectedInputs[origin])
+            if (_connectedInputs.ContainsKey(address.ToString()))
             {
-                plug.IncomingMessage(Message.FromNetMQMessage(msg));
-            }            
+                foreach (InputPlug plug in _connectedInputs[address.ToString()])
+                {
+                    plug.IncomingMessage(Message.FromNetMQMessage(msg));
+                }
+            }       
         }
     }
 }
