@@ -15,13 +15,13 @@ namespace ConsoleApp1
         {
             AsyncIO.ForceDotNet.Force();
 
-            using (LocalEndpoint local = new LocalEndpoint("local_endpoint", (s) => { Console.WriteLine("LOCAL: " + s); }))
-            using (LocalEndpoint remote = new LocalEndpoint("remote_endpoint", (s) => { Console.WriteLine("REMOTE: " + s); }))
+            using (LocalEndpoint local = new LocalEndpoint("local", (s) => { Console.WriteLine("LOCAL: " + s); }))
+            using (LocalEndpoint remote = new LocalEndpoint("remote", (s) => { Console.WriteLine("REMOTE: " + s); }))
             {
                 Node[] nodes = new Node[4];
                 for (int i = 0; i < 4; i++)
                 {
-                    Endpoint endpoint = (i > 2) ? local : remote;
+                    Endpoint endpoint = (i < 2) ? local : remote;
                     Node node = endpoint.CreateNode("node" + i);
                     nodes[i] = node;
 

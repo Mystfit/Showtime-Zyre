@@ -2,10 +2,11 @@
 using System.Collections.Generic;
 using System.Linq;
 using Newtonsoft.Json;
+using NetMQ;
 
 namespace Showtime.Zyre.Endpoints
 {
-    public class Endpoint : IDisposable
+    public abstract class Endpoint : IDisposable
     {
         public enum Commands
         {
@@ -21,9 +22,13 @@ namespace Showtime.Zyre.Endpoints
         [JsonProperty]
         protected List<Node> _nodes;
 
-        public Endpoint(string name, Action<string> logger)
+        public virtual Guid Uuid { get { return _uuid; } }
+        protected Guid _uuid;
+
+        public Endpoint(string name, Guid uuid, Action<string> logger = null)
         {
             _name = name;
+            _uuid = uuid;
             _nodes = new List<Node>();
         }
 
@@ -37,15 +42,14 @@ namespace Showtime.Zyre.Endpoints
 
         public virtual Node CreateNode(string name)
         {
-            return CreateNode(name, this);
-        }
-
-        public virtual Node CreateNode(string name, Endpoint endpoint)
-        {
-            Node node = new Node(name, endpoint);
+            Node node = new Node(name, this);
+            RegisterListenerNode(node);
             _nodes.Add(node);
             return node;
         }
+
+        public abstract void RegisterListenerNode(Node node);
+        public abstract void DeregisterListenerNode(Node node);
 
         public string ToJson()
         {
@@ -56,5 +60,7 @@ namespace Showtime.Zyre.Endpoints
         {
             Close();
         }
+
+        public abstract void Whisper(Guid peer, NetMQMessage msg);
     }
 }

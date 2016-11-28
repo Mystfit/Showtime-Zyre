@@ -13,14 +13,24 @@ namespace Showtime.Zyre
     [JsonObject(MemberSerialization.OptIn)]
     public class LocalEndpoint : Endpoint
     {
-        private NetMQ.Zyre.Zyre zyre;
+        private NetMQ.Zyre.Zyre _zyre;
         private NetMQPoller _poller;
         private Thread _pollthread;
 
         public List<RemoteEndpoint> RemoteEndpoints { get { return _remoteEndpoints; } }
         private List<RemoteEndpoint> _remoteEndpoints;
 
-        public LocalEndpoint(string name, Action<string> logger=null) : base(name, logger)
+        public override Guid Uuid
+        {
+            get
+            {
+                if (_zyre != null)
+                    return _zyre.Uuid();
+                return Guid.Empty;
+            }
+        }
+
+        public LocalEndpoint(string name, Action<string> logger=null) : base(name, Guid.Empty)
         {
             _remoteEndpoints = new List<RemoteEndpoint>();
 
@@ -38,11 +48,12 @@ namespace Showtime.Zyre
 
         private void StartZyre()
         {
-            zyre = new NetMQ.Zyre.Zyre(Name, false, (s)=> { });
-            zyre.Socket.ReceiveReady += ReceiveFromRemote;
-            _poller.Add(zyre.Socket);
-            zyre.Join("ZST");
-            zyre.Start();            
+            _zyre = new NetMQ.Zyre.Zyre(Name, false, (s)=> { });
+            _zyre.Socket.ReceiveReady += ReceiveFromRemote;
+            _poller.Add(_zyre.Socket);
+            _zyre.Join("ZST");
+            _zyre.Start();
+            _uuid = _zyre.Uuid();
         }
 
         public void Bootstrap()
@@ -66,49 +77,54 @@ namespace Showtime.Zyre
             _poller.Stop();
             _pollthread.Join();
             _poller.Dispose();
-            zyre.Dispose();
+            _zyre.Dispose();
 
             NetMQConfig.Cleanup();
         }
 
-        public override Node CreateNode(string name)
+        public override void RegisterListenerNode(Node node)
         {
-            Node node = base.CreateNode(name, this);
             _poller.Add(node.InputSocket);
-            return node;
+        }
+
+        public override void DeregisterListenerNode(Node node)
+        {
+            _poller.Remove(node.InputSocket);
         }
 
         public void SendToRemote(string msg)
         {
             NetMQMessage m = new NetMQMessage(1);
             m.Append(msg);
-            zyre.Shout("ZST", m);
+            _zyre.Shout("ZST", m);
         }
 
         private void ReceiveFromRemote(object sender, NetMQSocketEventArgs e)
         {
             NetMQMessage msg = e.Socket.ReceiveMultipartMessage();
-            NetMQMessage replymsg = null;
+            
             switch (msg[0].ConvertToString())
             {
                 case "ENTER":
                     Console.WriteLine("New endpoint found");
-                    replymsg = new NetMQMessage(2);
-                    replymsg.Append(Endpoint.Commands.REQ_FULL_GRAPH.ToString());
-                    replymsg.Append(zyre.Uuid().ToString());
-                    zyre.Whisper(new Guid(msg[1].Buffer), replymsg);
+                    RemoteEndpoint remote = new RemoteEndpoint(msg[2].ConvertToString(), this, new Guid(msg[1].Buffer));
+                    remote.RequestRemoteGraph(new Guid(msg[1].Buffer));
+                    _remoteEndpoints.Add(remote);
+
                     break;
                 case "WHISPER":
-                    if (msg[3].ConvertToString() == Endpoint.Commands.REQ_FULL_GRAPH.ToString())
+                    string whispertype = msg[3].ConvertToString();
+                    if (whispertype == Endpoint.Commands.REQ_FULL_GRAPH.ToString())
                     {
                         Console.WriteLine("Sending full graph to " + msg[2].ConvertToString());
-                        replymsg = new NetMQMessage(2);
-                        replymsg.Append(Endpoint.Commands.SEND_FULL_GRAPH.ToString());
-                        replymsg.Append(zyre.Uuid().ToString());
-                        zyre.Whisper(new Guid(msg[1].Buffer), replymsg);
-                    } else if (msg[3].ConvertToString() == Endpoint.Commands.SEND_FULL_GRAPH.ToString())
+                        SendFullGraph(new Guid(msg[1].Buffer));
+                    }
+                    else if (whispertype == Endpoint.Commands.SEND_FULL_GRAPH.ToString())
                     {
-                        Console.WriteLine("Got full graph");
+                        ReceivedFullGraph(msg[5].ConvertToString());
+                    } else if (whispertype == Endpoint.Commands.SEND_PARTIAL_GRAPH.ToString())
+                    {
+                        ReceivedPartialGraph();
                     }
                     break;
                 case "SHOUT":
@@ -118,7 +134,32 @@ namespace Showtime.Zyre
                 default:
                     break;
             }
-          
+        }
+
+        private void SendFullGraph(Guid peer)
+        {
+            NetMQMessage replymsg = null;
+            replymsg = new NetMQMessage(2);
+            replymsg.Append(Endpoint.Commands.SEND_FULL_GRAPH.ToString());
+            replymsg.Append(_zyre.Uuid().ToString());
+            replymsg.Append(JsonConvert.SerializeObject(_nodes));
+            Whisper(peer, replymsg);
+        }
+
+        private void ReceivedFullGraph(string graphjson)
+        {
+            Console.WriteLine("Got full graph: " + graphjson);
+            JsonConvert.DeserializeObject<List<Node>>(graphjson);
+        }
+
+        private void ReceivedPartialGraph()
+        {
+            Console.WriteLine("Got partial graph");
+        }
+
+        public override void Whisper(Guid peer, NetMQMessage msg)
+        {
+            _zyre.Whisper(peer, msg);
         }
     }
 }
