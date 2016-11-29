@@ -6,7 +6,9 @@ using System.Text;
 using NetMQ.Zyre;
 using NetMQ;
 using Newtonsoft.Json;
+using Newtonsoft.Json.Converters;
 using Showtime.Zyre.Endpoints;
+using Showtime.Zyre.Plugs;
 
 namespace Showtime.Zyre
 {
@@ -17,8 +19,8 @@ namespace Showtime.Zyre
         private NetMQPoller _poller;
         private Thread _pollthread;
 
-        public List<RemoteEndpoint> RemoteEndpoints { get { return _remoteEndpoints; } }
-        private List<RemoteEndpoint> _remoteEndpoints;
+        public Dictionary<Guid, RemoteEndpoint> RemoteEndpoints { get { return _remoteEndpoints; } }
+        private Dictionary<Guid, RemoteEndpoint> _remoteEndpoints;
 
         public override Guid Uuid
         {
@@ -32,7 +34,7 @@ namespace Showtime.Zyre
 
         public LocalEndpoint(string name, Action<string> logger=null) : base(name, Guid.Empty)
         {
-            _remoteEndpoints = new List<RemoteEndpoint>();
+            _remoteEndpoints = new Dictionary<Guid, RemoteEndpoint>();
 
             NetMQ.NetMQConfig.Linger = System.TimeSpan.FromSeconds(0);
             _poller = new NetMQPoller();
@@ -107,9 +109,11 @@ namespace Showtime.Zyre
             {
                 case "ENTER":
                     Console.WriteLine("New endpoint found");
-                    RemoteEndpoint remote = new RemoteEndpoint(msg[2].ConvertToString(), this, new Guid(msg[1].Buffer));
-                    remote.RequestRemoteGraph(new Guid(msg[1].Buffer));
-                    _remoteEndpoints.Add(remote);
+                    string name = msg[2].ConvertToString();
+                    Guid remoteId = new Guid(msg[1].Buffer);
+                    RemoteEndpoint remote = new RemoteEndpoint(name, this, remoteId);
+                    remote.RequestRemoteGraph(remoteId);
+                    _remoteEndpoints.Add(remoteId, remote);
 
                     break;
                 case "WHISPER":
@@ -121,7 +125,7 @@ namespace Showtime.Zyre
                     }
                     else if (whispertype == Endpoint.Commands.SEND_FULL_GRAPH.ToString())
                     {
-                        ReceivedFullGraph(msg[5].ConvertToString());
+                        ReceivedFullGraph(_remoteEndpoints[new Guid(msg[1].Buffer)], msg[4].ConvertToString());
                     } else if (whispertype == Endpoint.Commands.SEND_PARTIAL_GRAPH.ToString())
                     {
                         ReceivedPartialGraph();
@@ -141,15 +145,37 @@ namespace Showtime.Zyre
             NetMQMessage replymsg = null;
             replymsg = new NetMQMessage(2);
             replymsg.Append(Endpoint.Commands.SEND_FULL_GRAPH.ToString());
-            replymsg.Append(_zyre.Uuid().ToString());
             replymsg.Append(JsonConvert.SerializeObject(_nodes));
             Whisper(peer, replymsg);
         }
 
-        private void ReceivedFullGraph(string graphjson)
+        private void ReceivedFullGraph(Endpoint remoteEndpoint, string graphjson)
         {
             Console.WriteLine("Got full graph: " + graphjson);
-            JsonConvert.DeserializeObject<List<Node>>(graphjson);
+
+            JsonSerializerSettings settings = new JsonSerializerSettings
+            {
+                ConstructorHandling = ConstructorHandling.AllowNonPublicDefaultConstructor,
+                ContractResolver = new PrivateResolver()
+            };
+
+            List<Node> remotenodes = JsonConvert.DeserializeObject<List<Node>>(graphjson, settings);
+            foreach(Node n in remotenodes)
+            {
+                n.Endpoint = remoteEndpoint;
+                Console.WriteLine("New remote node " + n.Name);
+                foreach (InputPlug p in n.Inputs)
+                {
+                    p.Owner = n;
+                    Console.WriteLine("New remote input " + p.Path);
+                }
+
+                foreach (OutputPlug p in n.Outputs)
+                {
+                    p.Owner = n;
+                    Console.WriteLine("New remote output " + p.Path);
+                }
+            }
         }
 
         private void ReceivedPartialGraph()

@@ -10,6 +10,12 @@ namespace Showtime.Zyre
         public Address address;
         public string value;
 
+        public Message(Address address, string val = "")
+        {
+            this.address = address;
+            value = val;
+        }
+
         public Message(string path="", string val="")
         {
             address = Address.FromFullPath(path);

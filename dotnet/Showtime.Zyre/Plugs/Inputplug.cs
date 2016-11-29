@@ -2,29 +2,29 @@
 using System;
 using System.Collections.Generic;
 using NetMQ;
+using Newtonsoft.Json;
 
 namespace Showtime.Zyre.Plugs
 {
     public class InputPlug : Plug<SubscriberSocket>
     {
-        private HashSet<string> _targets;
-
+        private InputPlug() { }
         public InputPlug(string name, Node owner) : base(name, owner)
         {
-            _targets = new HashSet<string>();
-            _socket = owner.InputSocket;
+            Init();
         }
 
-        public void AddTarget(string target)
+        public override void Init()
         {
-            _targets.Add(target);
+            _path = new Address(Owner.Endpoint.Name, Owner.Name, Name);
+            _socket = Owner.InputSocket;
         }
 
         public void IncomingMessage(Message msg)
         {
             Console.WriteLine(string.Format("Plug {0} received value {1} from {2}", Name, msg.value, msg.address));
 
-            if (msg.address.endpoint != Owner.GetEndpoint.Name)
+            if (msg.address.endpoint != Owner.Endpoint.Name)
             {
                 Console.WriteLine("Received message intended for remote destination");
             }

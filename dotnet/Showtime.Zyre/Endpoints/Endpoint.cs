@@ -21,6 +21,7 @@ namespace Showtime.Zyre.Endpoints
 
         [JsonProperty]
         protected List<Node> _nodes;
+        public List<Node> Nodes {  get { return _nodes; } }
 
         public virtual Guid Uuid { get { return _uuid; } }
         protected Guid _uuid;

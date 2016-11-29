@@ -13,34 +13,45 @@ namespace Showtime.Zyre
     public class Node
     {
         private Endpoint _endpoint;
-        public Endpoint GetEndpoint { get { return _endpoint; } }
+        public Endpoint Endpoint {
+            get { return _endpoint; }
+            set {
+                _endpoint = value;
+                Init();
+            }
+        }
 
-        private List<OutputPlug> _outputs;
-        private List<InputPlug> _inputs;        
-        
+        private List<OutputPlug> _outputs = new List<OutputPlug>();
+        private List<InputPlug> _inputs = new List<InputPlug>();
+
         [JsonProperty]
         public List<OutputPlug> Outputs { get { return _outputs; } }
         [JsonProperty]
         public List<InputPlug> Inputs { get { return _inputs; } }
 
-        private Dictionary<string, List<InputPlug>> _connectedInputs;
+        private Dictionary<string, List<InputPlug>> _connectedInputs = new Dictionary<string, List<InputPlug>>();
 
         private SubscriberSocket _input;
         public SubscriberSocket InputSocket { get { return _input; } }
 
         private string _name;
         [JsonProperty]
-        public string Name { get { return _name; } }
+        public string Name {
+            get { return _name; }
+            private set { _name = value; }
+        }
 
+        private Node(){}
         public Node(string name, Endpoint endpoint = null)
         {
             _name = name;
-            _inputs = new List<InputPlug>();
-            _outputs = new List<OutputPlug>();
+            _endpoint = endpoint;
+            Init();
+        }
+
+        public void Init() {
             _input = new SubscriberSocket();
             _input.ReceiveReady += IncomingMessage;
-            _endpoint = endpoint;
-            _connectedInputs = new Dictionary<string, List<InputPlug>>();
         }
 
         public void Close()
@@ -68,15 +79,14 @@ namespace Showtime.Zyre
 
         public void ConnectPlugs(OutputPlug output, InputPlug input)
         {
-            input.AddTarget(output.FullName);
-            input.Socket.Connect(output.Address);
-            input.Socket.Subscribe(output.FullName);
-            Console.WriteLine("Subscribing to " + output.FullName);
+            input.Socket.Connect(output.Path.ToEndpoint());
+            input.Socket.Subscribe(output.Path.ToString());
+            Console.WriteLine("Subscribing to " + output.Path.ToString());
 
-            if (!_connectedInputs.ContainsKey(output.FullName))
-                _connectedInputs.Add(output.FullName, new List<InputPlug>());
+            if (!_connectedInputs.ContainsKey(output.Path.ToString()))
+                _connectedInputs.Add(output.Path.ToString(), new List<InputPlug>());
 
-            _connectedInputs[output.FullName].Add(input);
+            _connectedInputs[output.Path.ToString()].Add(input);
         }
 
         private void IncomingMessage(object sender, NetMQ.NetMQSocketEventArgs e)

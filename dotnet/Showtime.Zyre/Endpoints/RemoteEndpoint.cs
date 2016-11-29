@@ -22,7 +22,6 @@ namespace Showtime.Zyre.Endpoints
             NetMQMessage replymsg = null;
             replymsg = new NetMQMessage(2);
             replymsg.Append(Endpoint.Commands.REQ_FULL_GRAPH.ToString());
-            replymsg.Append(_owner.Uuid.ToString());
             Whisper(remotepeer, replymsg);
         }
 

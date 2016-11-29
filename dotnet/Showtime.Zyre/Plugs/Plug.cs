@@ -7,29 +7,41 @@ using Newtonsoft.Json;
 
 namespace Showtime.Zyre.Plugs
 {
-    [JsonObject(MemberSerialization.OptIn)]
-    public class Plug<T> where T : NetMQSocket
+    [JsonObject(MemberSerialization.OptOut)]
+    public abstract class Plug<T> where T : NetMQSocket
     {
+        protected Plug(){}
         public Plug(string name, Node owner)
         {
             _owner = owner;
             _name = name;
         }
 
+        public abstract void Init();
+
         private string _name;
-        public string Name { get { return _name; } }
-
+        public string Name {
+            get { return _name; }
+            private set { _name = value; }
+        }
+  
         private Node _owner;
-        public Node Owner { get { return _owner; } }
-
-        protected bool _isconnected;
-        public bool IsConnected { get { return _isconnected; } }
-
-        protected string _targetaddress;
-        public string Address { get { return _targetaddress; } }
+        [JsonIgnore]
+        public Node Owner
+        {
+            get { return _owner; }
+            set {
+                _owner = value;
+                Init();
+            }
+        }
 
         protected string _currentValue;
-        public string CurrentValue { get { return _currentValue; } }
+        public string CurrentValue {
+            get { return _currentValue; }
+            private set { _currentValue = value; }
+        }
+
 
         private bool _dirty;
         public void SetDirty() { _dirty = true; }
@@ -37,10 +49,10 @@ namespace Showtime.Zyre.Plugs
         public bool IsDirty { get { return _dirty; } }
 
         protected T _socket;
+        [JsonIgnore]
         public T Socket { get { return _socket; } }
 
-        [JsonProperty]
-        public string FullName { get { return String.Format("{0}/{1}/{2}", _owner.GetEndpoint?.Name, _owner.Name, _name); } }
-
+        public Address Path {get { return _path; } }
+        protected Address _path;
     }
 }

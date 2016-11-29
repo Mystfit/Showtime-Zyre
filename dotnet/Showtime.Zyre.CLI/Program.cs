@@ -15,23 +15,29 @@ namespace ConsoleApp1
         {
             AsyncIO.ForceDotNet.Force();
 
-            using (LocalEndpoint local = new LocalEndpoint("local", (s) => { Console.WriteLine("LOCAL: " + s); }))
-            using (LocalEndpoint remote = new LocalEndpoint("remote", (s) => { Console.WriteLine("REMOTE: " + s); }))
+            using (LocalEndpoint local = new LocalEndpoint(Guid.NewGuid().ToString(), (s) => { Console.WriteLine("LOCAL: " + s); }))
+            //using (LocalEndpoint remote = new LocalEndpoint("remote", (s) => { Console.WriteLine("REMOTE: " + s); }))
             {
                 Node[] nodes = new Node[4];
                 for (int i = 0; i < 4; i++)
                 {
-                    Endpoint endpoint = (i < 2) ? local : remote;
+                    Endpoint endpoint = (i < 2) ? local : local;
                     Node node = endpoint.CreateNode("node" + i);
                     nodes[i] = node;
 
-                    OutputPlug output = node.CreateOutputPlug("out" + i);
-                    InputPlug input = node.CreateInputPlug("in" + i);
+                    for(int j = 0; j < 1; j++)
+                    {
+                        node.CreateOutputPlug("out" + j);
+                        node.CreateInputPlug("in" + j);
+                    }
 
                     if (i > 0)
                     {
-                        Console.WriteLine("Connecting to " + output.Address);
-                        node.ConnectPlugs(nodes[i-1].Outputs[0], input);
+                        for (int j = 0; j < 1; j++)
+                        {
+                            Console.WriteLine("Connecting to " + nodes[i].Outputs[j].Path);
+                            node.ConnectPlugs(nodes[i - 1].Outputs[j], nodes[i].Inputs[j]);
+                        }
                     }
                 }
 
@@ -40,8 +46,14 @@ namespace ConsoleApp1
 
                 while (true)
                 {
-                    for (int i = 0; i < 3; i++)
-                        nodes[i].Outputs[0].Update("hello");
+                    foreach(Node n in local.Nodes)
+                    {
+                        foreach(OutputPlug p in n.Outputs)
+                        {
+                            p.Update("Hello");
+                        }
+                    }
+                    
 
                     if (Console.KeyAvailable && Console.ReadKey(true).Key == ConsoleKey.Escape) break;
 
