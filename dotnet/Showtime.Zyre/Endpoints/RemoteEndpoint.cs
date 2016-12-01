@@ -12,7 +12,7 @@ namespace Showtime.Zyre.Endpoints
         public Endpoint Owner => _owner;
         private Endpoint _owner;
 
-        public RemoteEndpoint(string name, Endpoint owner, Guid remoteUuid) : base(name, remoteUuid)
+        public RemoteEndpoint(string name, Endpoint owner, Guid remoteUuid, Action<string> logger = null) : base(name, remoteUuid, logger)
         {
             _owner = owner;
         }

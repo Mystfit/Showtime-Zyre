@@ -1,0 +1,62 @@
+{
+  "locked": false,
+  "version": 2,
+  "targets": {
+    ".NETFramework,Version=v3.5": {
+      "AsyncIO/0.1.26": {
+        "type": "package",
+        "compile": {
+          "lib/net35/AsyncIO.dll": {}
+        },
+        "runtime": {
+          "lib/net35/AsyncIO.dll": {}
+        }
+      },
+      "NetMQ/4.0.0": {
+        "type": "project",
+        "framework": ".NETFramework,Version=v3.5",
+        "dependencies": {
+          "AsyncIO": "0.1.26"
+        },
+        "frameworkAssemblies": [
+          "System.ServiceModel"
+        ],
+        "compile": {
+          "net35/NetMQ.dll": {}
+        },
+        "runtime": {
+          "net35/NetMQ.dll": {}
+        }
+      }
+    }
+  },
+  "libraries": {
+    "AsyncIO/0.1.26": {
+      "sha512": "mV6fvJg4K/kN6xzQ1sJJNzk7L8W0hKYxm2enGgi0cUs81v5S5JWfJF+M+KoyfmhUNNhy1nDcS4ycru8pBOFGyw==",
+      "type": "package",
+      "path": "AsyncIO/0.1.26",
+      "files": [
+        "AsyncIO.0.1.26.nupkg.sha512",
+        "AsyncIO.nuspec",
+        "lib/monoandroid60/AsyncIO.dll",
+        "lib/net35/AsyncIO.dll",
+        "lib/net40/AsyncIO.dll",
+        "lib/netstandard1.3/AsyncIO.dll",
+        "lib/xamarinios10/AsyncIO.dll"
+      ]
+    },
+    "NetMQ/4.0.0": {
+      "type": "project",
+      "path": "../../../netmq4/src/NetMQ/project.json",
+      "msbuildProject": "../../../netmq4/src/NetMQ/NetMQ.xproj"
+    }
+  },
+  "projectFileDependencyGroups": {
+    "": [
+      "NetMQ >= 4.0.0"
+    ],
+    ".NETFramework,Version=v3.5": []
+  },
+  "tools": {},
+  "projectFileToolGroups": {}
+}

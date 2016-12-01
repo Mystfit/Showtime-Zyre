@@ -5,6 +5,7 @@ using System.Linq;
 using System.Text;
 using NetMQ.Zyre;
 using NetMQ;
+using NetMQ.Sockets;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Converters;
 using Showtime.Zyre.Endpoints;
@@ -32,44 +33,53 @@ namespace Showtime.Zyre
             }
         }
 
-        public LocalEndpoint(string name, Action<string> logger=null) : base(name, Guid.Empty)
+        public LocalEndpoint(string name, Action<string> logger=null) : base(name, Guid.Empty, logger)
         {
-            _remoteEndpoints = new Dictionary<Guid, RemoteEndpoint>();
-
             NetMQ.NetMQConfig.Linger = System.TimeSpan.FromSeconds(0);
-            _poller = new NetMQPoller();
-            _pollthread = new Thread(() => {
-                Bootstrap();
-                _poller.Run();
-            });
-            _pollthread.Name = "endpoint-poller";
-            _pollthread.Start();
+            NetMQ.NetMQConfig.ThreadPoolSize = 3;
 
-            StartZyre();
+            _remoteEndpoints = new Dictionary<Guid, RemoteEndpoint>();
+            _poller = new NetMQPoller();
+            _poller.RunAsync();
+
+            //_pollthread = new Thread(() =>
+            //{
+                // Bootstrap();
+                //StartZyre();
+                //_poller.Run();
+            //});
+            //_pollthread.Name = "endpoint-poller";
+            //_pollthread.Start();
         }
 
         private void StartZyre()
         {
-            _zyre = new NetMQ.Zyre.Zyre(Name, false, (s)=> { });
-            _zyre.Socket.ReceiveReady += ReceiveFromRemote;
-            _poller.Add(_zyre.Socket);
-            _zyre.Join("ZST");
-            _zyre.Start();
-            _uuid = _zyre.Uuid();
+            lock (_sync)
+            {
+                _zyre = new NetMQ.Zyre.Zyre(Name, false, (s) => { });
+                _zyre.Socket.ReceiveReady += ReceiveFromRemote;
+                _poller.Add(_zyre.Socket);
+                _zyre.Join("ZST");
+                _zyre.Start();
+                _uuid = _zyre.Uuid();
+            }
         }
 
         public void Bootstrap()
         {
             //BUG
             //We create a temporary Zyre node to kickstart the poller which seems to block until a Zyre node is discovered
-            NetMQ.Zyre.Zyre bootstrap = new NetMQ.Zyre.Zyre("bootstrap", true);
-            bootstrap.Join("ZST");
+            lock (_sync)
+            {
+                NetMQ.Zyre.Zyre bootstrap = new NetMQ.Zyre.Zyre("bootstrap", true);
+                bootstrap.Join("ZST");
 
-            NetMQMessage m = new NetMQMessage(1);
-            m.Append("WAKEUP");
-            bootstrap.Shout("ZST", m);
-            Thread.Sleep(100);
-            bootstrap.Dispose();
+                NetMQMessage m = new NetMQMessage(1);
+                m.Append("WAKEUP");
+                bootstrap.Shout("ZST", m);
+                Thread.Sleep(100);
+                bootstrap.Dispose();
+            }
         }
 
         public override void Close()
@@ -86,12 +96,18 @@ namespace Showtime.Zyre
 
         public override void RegisterListenerNode(Node node)
         {
-            _poller.Add(node.InputSocket);
+            lock (_sync)
+            {
+                _poller.Add(node.InputSocket);
+            }
         }
 
         public override void DeregisterListenerNode(Node node)
         {
-            _poller.Remove(node.InputSocket);
+            lock (_sync)
+            {
+                _poller.Remove(node.InputSocket);
+            }
         }
 
         public void SendToRemote(string msg)
@@ -111,9 +127,16 @@ namespace Showtime.Zyre
                     Console.WriteLine("New endpoint found");
                     string name = msg[2].ConvertToString();
                     Guid remoteId = new Guid(msg[1].Buffer);
-                    RemoteEndpoint remote = new RemoteEndpoint(name, this, remoteId);
+                    RemoteEndpoint remote = new RemoteEndpoint(name, this, remoteId, (c)=> { Console.WriteLine("REMOTE: " + c); });
                     remote.RequestRemoteGraph(remoteId);
-                    _remoteEndpoints.Add(remoteId, remote);
+
+                    if (!_remoteEndpoints.ContainsKey(remoteId)){
+                        _remoteEndpoints.Add(remoteId, remote);
+                    } else
+                    {
+                        _remoteEndpoints[remoteId] = remote;
+                    }
+                    
 
                     break;
                 case "WHISPER":
@@ -162,7 +185,7 @@ namespace Showtime.Zyre
             List<Node> remotenodes = JsonConvert.DeserializeObject<List<Node>>(graphjson, settings);
             foreach(Node n in remotenodes)
             {
-                n.Endpoint = remoteEndpoint;
+                remoteEndpoint.CreateNode(n);
                 Console.WriteLine("New remote node " + n.Name);
                 foreach (InputPlug p in n.Inputs)
                 {

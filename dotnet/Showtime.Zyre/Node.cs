@@ -52,6 +52,7 @@ namespace Showtime.Zyre
         public void Init() {
             _input = new SubscriberSocket();
             _input.ReceiveReady += IncomingMessage;
+            Endpoint.RegisterListenerNode(this);
         }
 
         public void Close()
@@ -63,7 +64,7 @@ namespace Showtime.Zyre
 
         public InputPlug CreateInputPlug(string plugname)
         {
-            Console.WriteLine(String.Format("Creating input {0} for {1}", plugname, _name));
+            Endpoint.Log(String.Format("Creating input {0} for {1}", plugname, _name));
             InputPlug input = new InputPlug(plugname, this);
             _inputs.Add(input);
             return input;
@@ -71,7 +72,7 @@ namespace Showtime.Zyre
 
         public OutputPlug CreateOutputPlug(string plugname)
         {
-            Console.WriteLine(String.Format("Creating output {0} for {1}", plugname, _name));
+            Endpoint.Log(String.Format("Creating output {0} for {1}", plugname, _name));
             OutputPlug output = new OutputPlug(plugname, this);
             _outputs.Add(output);
             return output;
@@ -80,8 +81,11 @@ namespace Showtime.Zyre
         public void ConnectPlugs(OutputPlug output, InputPlug input)
         {
             input.Socket.Connect(output.Path.ToEndpoint());
+            Endpoint.Log("Connecting to " + output.Path.ToEndpoint());
+
             input.Socket.Subscribe(output.Path.ToString());
-            Console.WriteLine("Subscribing to " + output.Path.ToString());
+            //input.Socket.SubscribeToAnyTopic();
+            Endpoint.Log("Subscribing to " + output.Path.ToString());
 
             if (!_connectedInputs.ContainsKey(output.Path.ToString()))
                 _connectedInputs.Add(output.Path.ToString(), new List<InputPlug>());
@@ -101,6 +105,35 @@ namespace Showtime.Zyre
                     plug.IncomingMessage(Message.FromNetMQMessage(msg));
                 }
             }       
+        }
+
+        public void ListInputs()
+        {
+            Endpoint.Log("--------------------------");
+            Endpoint.Log("Inputs:");
+            Endpoint.Log("--------------------------");
+
+            for (int i = 0; i < Inputs.Count; i++)
+            {
+                Endpoint.Log(i + ": " + Inputs[i].ToString());
+            }
+        }
+
+        public void ListOutputs()
+        {
+            Endpoint.Log("\n--------------------------");
+            Endpoint.Log("Outputs:");
+            Endpoint.Log("--------------------------");
+            for (int i = 0; i < Outputs.Count; i++)
+            {
+                Endpoint.Log(i + ": " + Outputs[i].ToString());
+            }
+        }
+
+        public void ListPlugs()
+        {
+            ListInputs();
+            ListOutputs(); 
         }
     }
 }

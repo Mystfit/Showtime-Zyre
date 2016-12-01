@@ -22,12 +22,22 @@ namespace Showtime.Zyre.Plugs
 
         public void IncomingMessage(Message msg)
         {
-            Console.WriteLine(string.Format("Plug {0} received value {1} from {2}", Name, msg.value, msg.address));
+            Owner.Endpoint.Log(string.Format("Plug {0} received value {1} from {2}", Path.ToString(), msg.value, msg.address));
 
             if (msg.address.endpoint != Owner.Endpoint.Name)
             {
-                Console.WriteLine("Received message intended for remote destination");
+                Owner.Endpoint.Log("Received message intended for remote destination");
             }
+        }
+
+        public void Connect(OutputPlug outplug)
+        {
+            Owner.ConnectPlugs(outplug, this);
+        }
+
+        public override string ToString()
+        {
+            return "   I<- " + Name;
         }
     }
 }

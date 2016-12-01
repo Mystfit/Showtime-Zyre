@@ -25,7 +25,14 @@ namespace Showtime.Zyre.Plugs
         public virtual void Update(string value)
         {
             _currentValue = value;
-            _socket.SendMultipartMessage(new Message(Path, value).ToNetMQMessage());
+            NetMQMessage msg = new Message(Path, value).ToNetMQMessage();
+            Owner.Endpoint.Log("Sending update from " + Path.ToString());
+            _socket.SendMultipartMessage(msg);
+        }
+
+        public override string ToString()
+        {
+            return "   O-> " + Name;
         }
     }
 }
