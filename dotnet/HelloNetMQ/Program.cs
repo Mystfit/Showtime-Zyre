@@ -15,29 +15,35 @@ namespace HelloNetMQ
 
         public NetMQPoller poller;
 
+        public bool connected = false;
+
 
         public Node()
         {
-            pub = new PublisherSocket("@inproc://publisher");
+            poller = new NetMQPoller();
+
+            //Create node input
             sub = new SubscriberSocket();
-            sub.Connect("inproc://publisher");
-            sub.SubscribeToAnyTopic();
+
             sub.ReceiveReady += (s, a) =>
             {
                 Console.WriteLine("First: " + a.Socket.ReceiveMultipartMessage()[0].ConvertToString());
             };
-
-            sub2 = new SubscriberSocket();
-
-            poller = new NetMQPoller();
-
             poller.Add(sub);
             poller.RunAsync();
+
+            //Create plug output
+            pub = new PublisherSocket("@inproc://publisher");
+            //Connect plug out to node in
+
+            sub.Connect("inproc://publisher");
+            sub.Subscribe("32abd/node0974/out0");
+
+            //Start poller
         }
 
         public void Loop()
         {
-            bool connected = false;
 
             //Publish message
             NetMQMessage msg = new NetMQMessage(1);
@@ -47,12 +53,12 @@ namespace HelloNetMQ
             //At the end of the first run, create another sub to test late joiners
             if (!connected)
             {
-                var sub2 = new SubscriberSocket();
+                sub2 = new SubscriberSocket();
                 sub2.Connect("inproc://publisher");
                 poller.Add(sub2);
                 sub2.ReceiveReady += (s, a) =>
                 {
-                    Console.WriteLine("second: " + a.Socket.ReceiveMultipartMessage()[0].ConvertToString());
+                    Console.WriteLine("Second: " + a.Socket.ReceiveMultipartMessage()[0].ConvertToString());
                 };
                 sub2.Subscribe("32abd/node0974/out0");
                 connected = true;
@@ -69,10 +75,16 @@ namespace HelloNetMQ
             
             while (true)
             {
+                if (Console.KeyAvailable && Console.ReadKey(true).Key == ConsoleKey.Escape) break;
                 n.Loop();
                 System.Threading.Thread.Sleep(1000);
             }
-            
+            n.poller.StopAsync();
+            n.poller.Dispose();
+            n.sub.Dispose();
+            n.pub.Dispose();
+            n.sub2.Dispose();
+            NetMQ.NetMQConfig.Cleanup();
         }
     }
 }

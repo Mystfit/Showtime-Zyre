@@ -59,7 +59,7 @@
         "type": "project",
         "framework": ".NETFramework,Version=v3.5",
         "dependencies": {
-          "NetMQ": "4.0.0-rc5",
+          "NetMQ": "4.0.0",
           "NetMQ.zproto": "0.1.5",
           "gsl": "4.1.0.1"
         },
@@ -165,8 +165,8 @@
     },
     "NetMQ/4.0.0": {
       "type": "project",
-      "path": "../../../netmq4/src/NetMQ/project.json",
-      "msbuildProject": "../../../netmq4/src/NetMQ/NetMQ.xproj"
+      "path": "../../../netmq4-testing/src/NetMQ/project.json",
+      "msbuildProject": "../../../netmq4-testing/src/NetMQ/NetMQ.xproj"
     },
     "NetMQ.Zyre/1.0.0": {
       "type": "project",

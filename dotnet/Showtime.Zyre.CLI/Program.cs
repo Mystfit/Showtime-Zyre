@@ -13,17 +13,16 @@ namespace ConsoleApp1
     {
         public static void Main(string[] args)
         {
-            int numnodes = 2;
-
-            //AsyncIO.ForceDotNet.Force();
+            int numnodes = 4;
+#if NET35
+            AsyncIO.ForceDotNet.Force();
+#endif
 
             string guid = Guid.NewGuid().ToString();
             string endpointid = guid.Substring(Math.Max(0, guid.Length - 4));
 
             using (LocalEndpoint local = new LocalEndpoint(endpointid, (s) => { Console.WriteLine("LOCAL: " + s); }))
-            //using (LocalEndpoint remote = new LocalEndpoint("remote", (s) => { Console.WriteLine("REMOTE: " + s); }))
             {
-
                 Node[] nodes = new Node[numnodes];
                 for (int i = 0; i < numnodes; i++)
                 {
@@ -40,21 +39,13 @@ namespace ConsoleApp1
                     }
                 }
 
+                Console.Clear();
+
                 LinkNodesInChain(local);
                 TestNodeLink(local);
 
-
-                System.Threading.Thread.Sleep(1000);
-                Console.Clear();
-
-                
-
-
                 Console.WriteLine("Connect to local or remote? (l/r)");
-
-
                 Endpoint targetEndpoint = null;
-
                 while (targetEndpoint == null)
                 {
                     char key = Console.ReadKey().KeyChar;
@@ -63,6 +54,12 @@ namespace ConsoleApp1
                     {
                         targetEndpoint = local;
 
+                        Console.WriteLine("Test node chain?");
+                        if ((Console.ReadKey().KeyChar == 'y') ? true : false)
+                        {
+                            LinkNodesInChain(targetEndpoint);
+                            TestNodeLink(targetEndpoint);
+                        }
                     }
                     else if (key == 'r')
                     {
@@ -86,15 +83,7 @@ namespace ConsoleApp1
                     }
                 }
 
-
-                bool testChain = false;
-                Console.WriteLine("Test node chain?");
-                if((Console.ReadKey().KeyChar == 'y') ? true : false)
-                {
-                    LinkNodesInChain(targetEndpoint);
-                    TestNodeLink(targetEndpoint);
-                }
-
+                //Setup message test
                 local.ListNodes();
                 Console.WriteLine("\nEnter index of source node");
                 Node outnode = local.Nodes[int.Parse(Console.ReadLine())];
@@ -111,9 +100,11 @@ namespace ConsoleApp1
                 Console.WriteLine("\nEnter index of destination plug");
                 InputPlug input = innode.Inputs[int.Parse(Console.ReadLine())];
 
-                Console.WriteLine(string.Format("About to connect {0} -> {1}", output.Path, input.Path));
 
+                Console.WriteLine(string.Format("About to connect {0} -> {1}", output.Path, input.Path));
                 input.Connect(output);
+
+
                 System.Threading.Thread.Sleep(1000);
                 output.Update("Message to fake remote plug");
                 
@@ -134,7 +125,7 @@ namespace ConsoleApp1
             {
                 if (i > 0)
                 {
-                    n.ConnectPlugs(endpoint.Nodes[i - 1].Outputs[0], n.Inputs[0]);
+                    n.Inputs[0].Connect(endpoint.Nodes[i - 1].Outputs[0]);
                     Console.WriteLine("Connecting to " + endpoint.Nodes[i - 1].Outputs[0].Path);
                 }
                 i++;
@@ -144,18 +135,14 @@ namespace ConsoleApp1
 
         public static void TestNodeLink(Endpoint endpoint)
         {
-            while (true)
+            
+            foreach (Node n in endpoint.Nodes)
             {
-                foreach (Node n in endpoint.Nodes)
+                foreach (OutputPlug p in n.Outputs)
                 {
-                    foreach (OutputPlug p in n.Outputs)
-                    {
-                        p.Update("hi there");
-                    }
+                    p.Update("hi there");
                 }
-                System.Threading.Thread.Sleep(1000);
-            }
+            }            
         }
-
     }
 }

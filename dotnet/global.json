@@ -1,3 +1,3 @@
 {
-  "projects": [ "../../Zyre-latest/src", "../../netmq4/src" ]
+  "projects": [ "../../Zyre-latest/src", "../../netmq4/src", "../../netmq4-testing/src" ]
 }

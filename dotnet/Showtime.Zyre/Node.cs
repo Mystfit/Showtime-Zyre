@@ -30,6 +30,7 @@ namespace Showtime.Zyre
         public List<InputPlug> Inputs { get { return _inputs; } }
 
         private Dictionary<string, List<InputPlug>> _connectedInputs = new Dictionary<string, List<InputPlug>>();
+        public Dictionary<string, List<InputPlug>> ConnectedInputs { get { return _connectedInputs; } }
 
         private SubscriberSocket _input;
         public SubscriberSocket InputSocket { get { return _input; } }
@@ -52,7 +53,6 @@ namespace Showtime.Zyre
         public void Init() {
             _input = new SubscriberSocket();
             _input.ReceiveReady += IncomingMessage;
-            Endpoint.RegisterListenerNode(this);
         }
 
         public void Close()
@@ -78,20 +78,14 @@ namespace Showtime.Zyre
             return output;
         }
 
-        public void ConnectPlugs(OutputPlug output, InputPlug input)
+        public void RegisterListener(InputPlug input, OutputPlug output)
         {
-            input.Socket.Connect(output.Path.ToEndpoint());
-            Endpoint.Log("Connecting to " + output.Path.ToEndpoint());
+            if (!ConnectedInputs.ContainsKey(output.Path.ToString()))
+                ConnectedInputs.Add(output.Path.ToString(), new List<InputPlug>());
 
-            input.Socket.Subscribe(output.Path.ToString());
-            //input.Socket.SubscribeToAnyTopic();
-            Endpoint.Log("Subscribing to " + output.Path.ToString());
-
-            if (!_connectedInputs.ContainsKey(output.Path.ToString()))
-                _connectedInputs.Add(output.Path.ToString(), new List<InputPlug>());
-
-            _connectedInputs[output.Path.ToString()].Add(input);
+            ConnectedInputs[output.Path.ToString()].Add(input);
         }
+
 
         private void IncomingMessage(object sender, NetMQ.NetMQSocketEventArgs e)
         {

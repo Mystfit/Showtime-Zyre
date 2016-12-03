@@ -36,20 +36,11 @@ namespace Showtime.Zyre
         public LocalEndpoint(string name, Action<string> logger=null) : base(name, Guid.Empty, logger)
         {
             NetMQ.NetMQConfig.Linger = System.TimeSpan.FromSeconds(0);
-            NetMQ.NetMQConfig.ThreadPoolSize = 3;
 
             _remoteEndpoints = new Dictionary<Guid, RemoteEndpoint>();
-            _poller = new NetMQPoller();
-            _poller.RunAsync();
 
-            //_pollthread = new Thread(() =>
-            //{
-                // Bootstrap();
-                //StartZyre();
-                //_poller.Run();
-            //});
-            //_pollthread.Name = "endpoint-poller";
-            //_pollthread.Start();
+            _poller = new NetMQPoller();
+            StartZyre();
         }
 
         private void StartZyre()
@@ -59,26 +50,13 @@ namespace Showtime.Zyre
                 _zyre = new NetMQ.Zyre.Zyre(Name, false, (s) => { });
                 _zyre.Socket.ReceiveReady += ReceiveFromRemote;
                 _poller.Add(_zyre.Socket);
+
                 _zyre.Join("ZST");
                 _zyre.Start();
+
+                CheckPolling();
+
                 _uuid = _zyre.Uuid();
-            }
-        }
-
-        public void Bootstrap()
-        {
-            //BUG
-            //We create a temporary Zyre node to kickstart the poller which seems to block until a Zyre node is discovered
-            lock (_sync)
-            {
-                NetMQ.Zyre.Zyre bootstrap = new NetMQ.Zyre.Zyre("bootstrap", true);
-                bootstrap.Join("ZST");
-
-                NetMQMessage m = new NetMQMessage(1);
-                m.Append("WAKEUP");
-                bootstrap.Shout("ZST", m);
-                Thread.Sleep(100);
-                bootstrap.Dispose();
             }
         }
 
@@ -92,6 +70,16 @@ namespace Showtime.Zyre
             _zyre.Dispose();
 
             NetMQConfig.Cleanup();
+        }
+
+        public override bool IsPolling{ get { return _poller.IsRunning; } }
+
+        public override void CheckPolling()
+        {
+            if (!IsPolling)
+            {
+                _poller.RunAsync();
+            }
         }
 
         public override void RegisterListenerNode(Node node)

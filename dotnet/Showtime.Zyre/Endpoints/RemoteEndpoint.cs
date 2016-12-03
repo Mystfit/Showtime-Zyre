@@ -19,10 +19,17 @@ namespace Showtime.Zyre.Endpoints
 
         public void RequestRemoteGraph(Guid remotepeer)
         {
+            Owner.Log("Requesting remote graph from " + remotepeer);
             NetMQMessage replymsg = null;
             replymsg = new NetMQMessage(2);
             replymsg.Append(Endpoint.Commands.REQ_FULL_GRAPH.ToString());
             Whisper(remotepeer, replymsg);
+        }
+
+        public override bool IsPolling { get { return Owner.IsPolling; } }
+        public override void CheckPolling()
+        {
+            Owner.CheckPolling();
         }
 
         public override void RegisterListenerNode(Node node)

@@ -47,8 +47,8 @@
     },
     "NetMQ/4.0.0": {
       "type": "project",
-      "path": "../../../netmq4/src/NetMQ/project.json",
-      "msbuildProject": "../../../netmq4/src/NetMQ/NetMQ.xproj"
+      "path": "../../../netmq4-testing/src/NetMQ/project.json",
+      "msbuildProject": "../../../netmq4-testing/src/NetMQ/NetMQ.xproj"
     }
   },
   "projectFileDependencyGroups": {

@@ -22,7 +22,7 @@ namespace Showtime.Zyre.Endpoints
 
         [JsonProperty]
         protected List<Node> _nodes;
-        public List<Node> Nodes {  get { return _nodes; } }
+        public List<Node> Nodes { get { return _nodes; } }
 
         public virtual Guid Uuid { get { return _uuid; } }
         protected Guid _uuid;
@@ -78,6 +78,10 @@ namespace Showtime.Zyre.Endpoints
         {
             Close();
         }
+
+        protected bool _isPolling;
+        public abstract bool IsPolling { get; }
+        public abstract void CheckPolling();
 
         public abstract void Whisper(Guid peer, NetMQMessage msg);
 

@@ -27,17 +27,35 @@ namespace Showtime.Zyre.Plugs
             if (msg.address.endpoint != Owner.Endpoint.Name)
             {
                 Owner.Endpoint.Log("Received message intended for remote destination");
+                Owner.Endpoint.Whisper(Owner.Endpoint.Uuid, msg.ToNetMQMessage());
             }
         }
 
         public void Connect(OutputPlug outplug)
         {
-            Owner.ConnectPlugs(outplug, this);
+            if (!IsListeningTo(outplug))
+            {
+                Socket.Subscribe(outplug.Path.ToString());
+                Owner.Endpoint.Log("Subscribing to " + outplug.Path.ToString());
+
+                Socket.Connect(outplug.Path.ToEndpoint());
+                Owner.Endpoint.Log("Connecting to " + outplug.Path.ToEndpoint());
+
+                Owner.Endpoint.RegisterListenerNode(Owner);
+                Owner.Endpoint.CheckPolling();
+
+                Owner.RegisterListener(this, outplug);
+            }
         }
 
         public override string ToString()
         {
             return "   I<- " + Name;
+        }
+
+        public bool IsListeningTo(OutputPlug plug)
+        {
+            return Owner.ConnectedInputs.ContainsKey(plug.Path.ToString());
         }
     }
 }

@@ -59,7 +59,7 @@
         "type": "project",
         "framework": ".NETFramework,Version=v3.5",
         "dependencies": {
-          "NetMQ": "4.0.0-rc5",
+          "NetMQ": "4.0.0",
           "NetMQ.zproto": "0.1.5",
           "gsl": "4.1.0.1"
         },
@@ -68,6 +68,91 @@
         },
         "runtime": {
           "net35/NetMQ.Zyre.dll": {}
+        }
+      },
+      "Showtime.Zyre/1.0.0": {
+        "type": "project",
+        "framework": ".NETFramework,Version=v3.5",
+        "dependencies": {
+          "MsgPack.Cli": "0.9.0-beta1",
+          "NetMQ": "4.0.0",
+          "NetMQ.Zyre": "1.0.0",
+          "Newtonsoft.Json": "9.0.2-beta1"
+        },
+        "compile": {
+          "net35/Showtime.Zyre.dll": {}
+        },
+        "runtime": {
+          "net35/Showtime.Zyre.dll": {}
+        }
+      }
+    },
+    ".NETFramework,Version=v4.5": {
+      "AsyncIO/0.1.26": {
+        "type": "package",
+        "compile": {
+          "lib/net40/AsyncIO.dll": {}
+        },
+        "runtime": {
+          "lib/net40/AsyncIO.dll": {}
+        }
+      },
+      "gsl/4.1.0.1": {
+        "type": "package"
+      },
+      "MsgPack.Cli/0.9.0-beta1": {
+        "type": "package",
+        "compile": {
+          "lib/net45/MsgPack.dll": {}
+        },
+        "runtime": {
+          "lib/net45/MsgPack.dll": {}
+        }
+      },
+      "NetMQ.zproto/0.1.5": {
+        "type": "package",
+        "dependencies": {
+          "gsl": "4.1.0.1"
+        }
+      },
+      "Newtonsoft.Json/9.0.2-beta1": {
+        "type": "package",
+        "compile": {
+          "lib/net45/Newtonsoft.Json.dll": {}
+        },
+        "runtime": {
+          "lib/net45/Newtonsoft.Json.dll": {}
+        }
+      },
+      "NetMQ/4.0.0": {
+        "type": "project",
+        "framework": ".NETFramework,Version=v4.0",
+        "dependencies": {
+          "AsyncIO": "0.1.26"
+        },
+        "frameworkAssemblies": [
+          "System.ServiceModel"
+        ],
+        "compile": {
+          "net40/NetMQ.dll": {}
+        },
+        "runtime": {
+          "net40/NetMQ.dll": {}
+        }
+      },
+      "NetMQ.Zyre/1.0.0": {
+        "type": "project",
+        "framework": ".NETFramework,Version=v4.0",
+        "dependencies": {
+          "NetMQ": "4.0.0",
+          "NetMQ.zproto": "0.1.5",
+          "gsl": "4.1.0.1"
+        },
+        "compile": {
+          "net40/NetMQ.Zyre.dll": {}
+        },
+        "runtime": {
+          "net40/NetMQ.Zyre.dll": {}
         }
       },
       "Showtime.Zyre/1.0.0": {
@@ -181,8 +266,8 @@
     },
     "NetMQ/4.0.0": {
       "type": "project",
-      "path": "../../../netmq4/src/NetMQ/project.json",
-      "msbuildProject": "../../../netmq4/src/NetMQ/NetMQ.xproj"
+      "path": "../../../netmq4-testing/src/NetMQ/project.json",
+      "msbuildProject": "../../../netmq4-testing/src/NetMQ/NetMQ.xproj"
     },
     "NetMQ.Zyre/1.0.0": {
       "type": "project",
@@ -200,7 +285,8 @@
       "NetMQ.Zyre >= 1.0.0",
       "Showtime.Zyre >= 1.0.0-*"
     ],
-    ".NETFramework,Version=v3.5": []
+    ".NETFramework,Version=v3.5": [],
+    ".NETFramework,Version=v4.5": []
   },
   "tools": {},
   "projectFileToolGroups": {}
