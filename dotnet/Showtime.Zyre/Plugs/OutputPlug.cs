@@ -20,19 +20,31 @@ namespace Showtime.Zyre.Plugs
         {
             _path = new Address(Owner.Endpoint.Name, Owner.Name, Name);
             _socket = new PublisherSocket(String.Format("@inproc://{0}", Path.ToString()));
-        }
+        }  
 
-        public virtual void Update(string value)
+        public void Update(string value)
         {
             _currentValue = value;
-            NetMQMessage msg = new Message(Path, value).ToNetMQMessage();
-            Owner.Endpoint.Log("Sending update from " + Path.ToString());
-            _socket.SendMultipartMessage(msg);
+            Message msg = new Message(Path, value);
+            Update(msg);
+        }
+
+        public void Update(Message message)
+        {
+            //Owner.Endpoint.Log("Sending update from " + Path.ToString() + " " + message.value);
+            _socket.SendMultipartMessage(message.ToNetMQMessage());
         }
 
         public override string ToString()
         {
-            return "   O-> " + Name;
+            return "O-> " + Name;
+        }
+
+        protected override void Dispose(bool disposing)
+        {
+            base.Dispose(disposing);
+            if (Owner.Outputs.Contains(this) && !Owner.destroyed)
+                Owner.Outputs.Remove(this);
         }
     }
 }

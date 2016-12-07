@@ -23,12 +23,6 @@ namespace Showtime.Zyre.Plugs
         public void IncomingMessage(Message msg)
         {
             Owner.Endpoint.Log(string.Format("Plug {0} received value {1} from {2}", Path.ToString(), msg.value, msg.address));
-
-            if (msg.address.endpoint != Owner.Endpoint.Name)
-            {
-                Owner.Endpoint.Log("Received message intended for remote destination");
-                Owner.Endpoint.Whisper(Owner.Endpoint.Uuid, msg.ToNetMQMessage());
-            }
         }
 
         public void Connect(OutputPlug outplug)
@@ -41,21 +35,25 @@ namespace Showtime.Zyre.Plugs
                 Socket.Connect(outplug.Path.ToEndpoint());
                 Owner.Endpoint.Log("Connecting to " + outplug.Path.ToEndpoint());
 
-                Owner.Endpoint.RegisterListenerNode(Owner);
-                Owner.Endpoint.CheckPolling();
-
                 Owner.RegisterListener(this, outplug);
             }
         }
 
         public override string ToString()
         {
-            return "   I<- " + Name;
+            return "I<- " + Name;
         }
 
         public bool IsListeningTo(OutputPlug plug)
         {
             return Owner.ConnectedInputs.ContainsKey(plug.Path.ToString());
+        }
+
+        protected override void Dispose(bool disposing)
+        {
+            base.Dispose(disposing);
+            if (Owner.Inputs.Contains(this) && !Owner.destroyed)
+                Owner.Inputs.Remove(this);
         }
     }
 }

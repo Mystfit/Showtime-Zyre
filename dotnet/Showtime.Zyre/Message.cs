@@ -2,6 +2,8 @@
 using System.Collections.Generic;
 using System.Linq;
 using NetMQ;
+using Showtime.Zyre.Endpoints;
+using MsgPack;
 
 namespace Showtime.Zyre
 {
@@ -25,9 +27,16 @@ namespace Showtime.Zyre
         public NetMQMessage ToNetMQMessage()
         {
             NetMQMessage msg = new NetMQMessage();
-            msg.Append(address.ToString());
-            msg.Append(value);
+            msg.Append(address.ToString()); //Origin
+            msg.Append(value);              //Message contents
             return msg;
+        }
+
+        public static Message FromZyreWhisper(NetMQMessage msg)
+        {
+            string addressfull = msg[4].ConvertToString();
+            Message m = new Message(addressfull, msg[5].ConvertToString());
+            return m;
         }
 
         public static Message FromNetMQMessage(NetMQMessage msg)

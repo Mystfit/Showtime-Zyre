@@ -79,7 +79,7 @@ namespace ConsoleApp1
                     }
                     else
                     {
-                        Console.WriteLine(string.Format("\nDidn't understand input \'{0}\'. Please enter l or r", key));
+                        Console.WriteLine(string.Format("Didn't understand input \'{0}\'. Please enter l or r", key));
                     }
                 }
 
@@ -104,17 +104,34 @@ namespace ConsoleApp1
                 Console.WriteLine(string.Format("About to connect {0} -> {1}", output.Path, input.Path));
                 input.Connect(output);
 
+                System.Threading.Thread.Sleep(1000);
+
+                do
+                {
+                    Console.WriteLine("\nEnter message:");
+                    output.Update(Console.ReadLine());
+                } while (Console.ReadKey(true).Key != ConsoleKey.Escape);
+
+
+                Console.WriteLine("Testing local output removal");
+                output.Dispose();
+
+                Console.WriteLine("\nRemaining outputs:");
+                outnode.ListOutputs();
 
                 System.Threading.Thread.Sleep(1000);
-                output.Update("Message to fake remote plug");
-                
-                while (true)
-                {
-                    System.Threading.Thread.Sleep(1000);
-                    if (Console.KeyAvailable && Console.ReadKey(true).Key == ConsoleKey.Escape) break;
 
-                    System.Threading.Thread.Sleep(1000);
-                }
+
+                Console.WriteLine("Testing local node removal");
+                outnode.Dispose();
+
+                Console.WriteLine("\nRemaining nodes:");
+                local.ListNodes();
+
+                System.Threading.Thread.Sleep(1000);
+
+                //local.Dispose();
+
             }
         }
 

@@ -4,6 +4,7 @@ using System.Linq;
 using NetMQ;
 using NetMQ.Zyre;
 using Newtonsoft.Json;
+using Showtime.Zyre.Plugs;
 
 namespace Showtime.Zyre.Endpoints
 {
@@ -42,16 +43,29 @@ namespace Showtime.Zyre.Endpoints
             _owner.DeregisterListenerNode(node);
         }
 
-        public void SendToRemote(NetMQMessage msg)
-        {
-            Whisper(Uuid, msg);
-        }
-
         public override void Whisper(Guid peer, NetMQMessage msg)
         {
             _owner.Whisper(peer, msg);
         }
 
-        
+        public override void PlugConnectionRequest(InputPlug input, OutputPlug output)
+        {
+            NetMQMessage msg = new NetMQMessage(3);
+            msg.Append(Endpoint.Commands.PLUG_CONNECT.ToString());
+            msg.Append(input.Path.ToString());
+            msg.Append(output.Path.ToString());
+            Whisper(Uuid, msg);
+        }
+
+        public override void SendMessageToOwner(NetMQMessage message)
+        {
+            message.Push(Endpoint.Commands.PLUG_MSG.ToString());  //Inject message type for whisper to seperate
+            Whisper(Uuid, message);
+        }
+
+        public override void UpdateGraph(Node node, GraphUpdate.UpdateType type)
+        {
+            Log("In remote endpoint, we're not responsible for updating this part of the graph");
+        }
     }
 }
