@@ -70,6 +70,75 @@
           "net35/NetMQ.Zyre.dll": {}
         }
       }
+    },
+    ".NETFramework,Version=v4.0": {
+      "AsyncIO/0.1.26": {
+        "type": "package",
+        "compile": {
+          "lib/net40/AsyncIO.dll": {}
+        },
+        "runtime": {
+          "lib/net40/AsyncIO.dll": {}
+        }
+      },
+      "gsl/4.1.0.1": {
+        "type": "package"
+      },
+      "MsgPack.Cli/0.9.0-beta1": {
+        "type": "package",
+        "compile": {
+          "lib/net35-client/MsgPack.dll": {}
+        },
+        "runtime": {
+          "lib/net35-client/MsgPack.dll": {}
+        }
+      },
+      "NetMQ.zproto/0.1.5": {
+        "type": "package",
+        "dependencies": {
+          "gsl": "4.1.0.1"
+        }
+      },
+      "Newtonsoft.Json/9.0.2-beta1": {
+        "type": "package",
+        "compile": {
+          "lib/net40/Newtonsoft.Json.dll": {}
+        },
+        "runtime": {
+          "lib/net40/Newtonsoft.Json.dll": {}
+        }
+      },
+      "NetMQ/4.0.0": {
+        "type": "project",
+        "framework": ".NETFramework,Version=v4.0",
+        "dependencies": {
+          "AsyncIO": "0.1.26"
+        },
+        "frameworkAssemblies": [
+          "System.ServiceModel"
+        ],
+        "compile": {
+          "net40/NetMQ.dll": {}
+        },
+        "runtime": {
+          "net40/NetMQ.dll": {}
+        }
+      },
+      "NetMQ.Zyre/1.0.0": {
+        "type": "project",
+        "framework": ".NETFramework,Version=v4.0",
+        "dependencies": {
+          "NetMQ": "4.0.0",
+          "NetMQ.zproto": "0.1.5",
+          "gsl": "4.1.0.1"
+        },
+        "compile": {
+          "net40/NetMQ.Zyre.dll": {}
+        },
+        "runtime": {
+          "net40/NetMQ.Zyre.dll": {}
+        }
+      }
     }
   },
   "libraries": {
@@ -181,7 +250,8 @@
       "NetMQ.Zyre >= 1.0.0",
       "Newtonsoft.Json >= 9.0.2-beta1"
     ],
-    ".NETFramework,Version=v3.5": []
+    ".NETFramework,Version=v3.5": [],
+    ".NETFramework,Version=v4.0": []
   },
   "tools": {},
   "projectFileToolGroups": {}

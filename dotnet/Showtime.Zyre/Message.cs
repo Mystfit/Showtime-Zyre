@@ -34,8 +34,8 @@ namespace Showtime.Zyre
 
         public static Message FromZyreWhisper(NetMQMessage msg)
         {
-            string addressfull = msg[4].ConvertToString();
-            Message m = new Message(addressfull, msg[5].ConvertToString());
+            string addressfull = msg[1].ConvertToString();
+            Message m = new Message(addressfull, msg[2].ConvertToString());
             return m;
         }
 

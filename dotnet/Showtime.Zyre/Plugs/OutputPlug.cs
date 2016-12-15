@@ -31,7 +31,7 @@ namespace Showtime.Zyre.Plugs
 
         public void Update(Message message)
         {
-            //Owner.Endpoint.Log("Sending update from " + Path.ToString() + " " + message.value);
+            Owner.Endpoint.Log("Sending update from " + Path.ToString() + " " + message.value);
             _socket.SendMultipartMessage(message.ToNetMQMessage());
         }
 

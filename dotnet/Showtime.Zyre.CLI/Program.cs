@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using AsyncIO;
 using Showtime;
 using Showtime.Zyre;
 using Showtime.Zyre.Plugs;
@@ -13,36 +12,19 @@ namespace ConsoleApp1
     {
         public static void Main(string[] args)
         {
-            int numnodes = 4;
-#if NET35
-            AsyncIO.ForceDotNet.Force();
-#endif
-
             string guid = Guid.NewGuid().ToString();
             string endpointid = guid.Substring(Math.Max(0, guid.Length - 4));
 
-            using (LocalEndpoint local = new LocalEndpoint(endpointid, (s) => { Console.WriteLine("LOCAL: " + s); }))
+            using (ZyreEndpoint local = new ZyreEndpoint(endpointid, (s) => { Console.WriteLine("LOCAL: " + s); }))
             {
-                Node[] nodes = new Node[numnodes];
-                for (int i = 0; i < numnodes; i++)
-                {
-                    Endpoint endpoint = (i < 2) ? local : local;
-
-                    string id = Guid.NewGuid().ToString();
-                    Node node = endpoint.CreateNode("node-" + id.Substring(Math.Max(0, id.Length - 4)));
-                    nodes[i] = node;
-
-                    for(int j = 0; j < 1; j++)
-                    {
-                        node.CreateOutputPlug("out" + j);
-                        node.CreateInputPlug("in" + j);
-                    }
-                }
+                Console.WriteLine("Starting Showtime test");
+                System.Threading.Thread.Sleep(1000);
 
                 Console.Clear();
 
+                Console.WriteLine("How many nodes to create?");
+                CreateNodes(local, 2);
                 LinkNodesInChain(local);
-                TestNodeLink(local);
 
                 Console.WriteLine("Connect to local or remote? (l/r)");
                 Endpoint targetEndpoint = null;
@@ -63,6 +45,7 @@ namespace ConsoleApp1
                     }
                     else if (key == 'r')
                     {
+                        local.StartZyre();
                         local.ListNodes();
                         Console.WriteLine("Waiting for remote nodes...");
 
@@ -132,6 +115,21 @@ namespace ConsoleApp1
 
                 //local.Dispose();
 
+            }
+        }
+
+        public static void CreateNodes(Endpoint endpoint, int numnodes)
+        {
+            for (int i = 0; i < numnodes; i++)
+            {
+                string id = Guid.NewGuid().ToString();
+                Node node = endpoint.CreateNode("node-" + id.Substring(Math.Max(0, id.Length - 4)));
+
+                for (int j = 0; j < 1; j++)
+                {
+                    node.CreateOutputPlug("out" + j);
+                    node.CreateInputPlug("in" + j);
+                }
             }
         }
 

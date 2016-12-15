@@ -46,6 +46,7 @@ namespace Showtime.Zyre.Endpoints
         public virtual Guid Uuid { get { return _uuid; } }
         protected Guid _uuid;
 
+        public void SetLogger(Action<string> logfunc) { _logger = logfunc; }
         private Action<string> _logger;
         public void Log(string message)
         {

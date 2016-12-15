@@ -60,14 +60,15 @@ namespace Showtime.Zyre
 
         public InputPlug CreateInputPlug(InputPlug plug)
         {
-            if(plug.Owner == null)
-                plug.Owner = this;
-
             if (!Inputs.Any(p => p.Name == plug.Name)) {
+                plug.Owner = this;
                 Inputs.Add(plug);
             } else
             {
-                return Inputs.Find(p => p.Name == plug.Name);
+                InputPlug existing = Inputs.Find(p => p.Name == plug.Name);
+                if (existing.Owner == null)
+                    existing.Owner = this;
+                return existing;
             }
 
             return plug;
@@ -87,9 +88,6 @@ namespace Showtime.Zyre
 
         public OutputPlug CreateOutputPlug(OutputPlug plug)
         {
-            if (plug.Owner == null)
-                plug.Owner = this;
-
             if (!Outputs.Any(p => p.Name == plug.Name))
             {
                 plug.Owner = this;
@@ -97,7 +95,10 @@ namespace Showtime.Zyre
             }
             else
             {
-                return Outputs.Find(p => p.Path == plug.Path);
+                OutputPlug existing = Outputs.Find(p => p.Name == plug.Name);
+                if (existing.Owner == null)
+                    existing.Owner = this;
+                return existing;
             }
 
             return plug;
@@ -148,7 +149,7 @@ namespace Showtime.Zyre
                 {
                     Message localmessage = Message.FromNetMQMessage(msg);
 
-                    if (localmessage.address.endpoint != Endpoint.Name && Endpoint.GetType() != typeof(LocalEndpoint))
+                    if (localmessage.address.endpoint != Endpoint.Name && Endpoint.GetType() != typeof(ZyreEndpoint))
                     {
                         Endpoint.Log("Received message intended for remote destination");
                         Endpoint.SendMessageToOwner(msg);
@@ -213,7 +214,7 @@ namespace Showtime.Zyre
                     _outputs.Clear();
 
                     foreach (InputPlug plug in _inputs)
-                        plug.Socket.Dispose();
+                        plug.Dispose();
                     _inputs.Clear();
                     _input.Dispose();
                 }
